@@ -1,0 +1,220 @@
+RAPPORT DE TRAVAUX PRATIQUES : LES ALGORITHMES DE TRI
+Module : Algorithmique Avancée et Complexité
+Niveau : Master 1 Informatique (IL)
+Institution : USTHB
+
+--------------------------------------------------------------------------------
+
+1. Introduction
+Ce document présente le compte rendu du TP n°4. L'objectif est d'implémenter différents algorithmes de tri, d'analyser leur complexité théorique et de vérifier ces résultats par des tests expérimentaux sur des tableaux de tailles croissantes (N=100, 500, 1000, 2000, 5000).
+
+--------------------------------------------------------------------------------
+
+2. Exercice 1 : Tri à Bulles
+Le tri à bulles consiste à parcourir le tableau et à permuter deux éléments consécutifs s'ils ne sont pas dans l'ordre.
+
+2.1 Implémentation en Langage C
+// Version Standard avec détection de tableau trié
+void TriBulle(int *tab, int n) {
+    int change;
+    for (int i = 0; i < n - 1; i++) {
+        change = 0;
+        for (int j = 0; j < n - i - 1; j++) {
+            if (tab[j] > tab[j + 1]) {
+                int tmp = tab[j];
+                tab[j] = tab[j + 1];
+                tab[j + 1] = tmp;
+                change = 1;
+            }
+        }
+        if (change == 0) break;
+    }
+}
+
+// Version Optimisée
+void TriBulleOpt(int *tab, int n) {
+    int i = n - 1;
+    while (i > 0) {
+        int derniereSwap = 0;
+        for (int j = 0; j < i; j++) {
+            if (tab[j] > tab[j + 1]) {
+                int tmp = tab[j];
+                tab[j] = tab[j + 1];
+                tab[j + 1] = tmp;
+                derniereSwap = j;
+            }
+        }
+        i = derniereSwap;
+    }
+}
+
+2.2 Analyse de Performance
+Taille (N) | TriBulle Standard (s) | TriBulle Optimisé (s)
+-----------|-----------------------|----------------------
+100        | 0.000100              | 0.000000
+500        | 0.000500              | 0.000400
+1000       | 0.002000              | 0.001900
+2000       | 0.008100              | 0.007500
+5000       | 0.061400              | 0.056500
+
+--------------------------------------------------------------------------------
+
+3. Exercice 2 : Tri Gnaque (Cocktail Sort)
+Le Tri Gnaque est une variante du tri à bulles qui parcourt le tableau dans les deux sens afin de traiter plus efficacement les petits éléments situés en fin de tableau.
+
+3.1 Implémentation en Langage C
+void TriGnaque(int *tab, int n) {
+    int swapped = 1;
+    int start = 0, end = n - 1;
+    while (swapped) {
+        swapped = 0;
+        for (int i = start; i < end; ++i) {
+            if (tab[i] > tab[i + 1]) {
+                int tmp = tab[i];
+                tab[i] = tab[i + 1];
+                tab[i + 1] = tmp;
+                swapped = 1;
+            }
+        }
+        if (!swapped) break;
+        swapped = 0;
+        --end;
+        for (int i = end - 1; i >= start; --i) {
+            if (tab[i] > tab[i + 1]) {
+                int tmp = tab[i];
+                tab[i] = tab[i + 1];
+                tab[i + 1] = tmp;
+                swapped = 1;
+            }
+        }
+        ++start;
+    }
+}
+
+3.2 Résultats et Complexité
+- Meilleur Cas : O(n)
+- Pire Cas : O(n^2)
+- Performance observée pour N=5000 : 0.0425 s.
+
+--------------------------------------------------------------------------------
+
+4. Exercice 3 : Tri par Distribution (Radix Sort)
+Ce tri repose sur l'extraction successive des chiffres des nombres (unités, dizaines, etc.).
+
+4.1 Implémentation des fonctions
+int Extraire(int val, int j) {
+    int p = (int)pow(10, j);
+    return (val / p) % 10;
+}
+
+void TriBulleAlt(int *tab, int n, int j) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int k = 0; k < n - i - 1; k++) {
+            if (Extraire(tab[k], j) > Extraire(tab[k + 1], j)) {
+                int tmp = tab[k];
+                tab[k] = tab[k + 1];
+                tab[k + 1] = tmp;
+            }
+        }
+    }
+}
+
+void TriDistribution(int *tab, int n, int k) {
+    for (int j = 0; j < k; j++) {
+        TriBulleAlt(tab, n, j);
+    }
+}
+
+4.2 Résultats
+Taille (N) | Temps de Tri Distribution (s)
+-----------|------------------------------
+1000       | 0.106500
+5000       | 3.359000
+
+--------------------------------------------------------------------------------
+
+5. Exercice 4 : Tri Rapide (Quick Sort)
+Le Tri Rapide utilise la stratégie "Diviser pour Régner" centrée sur un pivot.
+
+5.1 Algorithmes
+int partitionner(int *tab, int debut, int fin) {
+    int pivot = tab[debut];
+    int i = debut + 1, j = fin;
+    while (i <= j) {
+        while (i <= fin && tab[i] <= pivot) i++;
+        while (j > debut && tab[j] > pivot) j--;
+        if (i < j) {
+            int tmp = tab[i];
+            tab[i] = tab[j];
+            tab[j] = tmp;
+        }
+    }
+    tab[debut] = tab[j];
+    tab[j] = pivot;
+    return j;
+}
+
+void triRapide(int *tab, int debut, int fin) {
+    if (debut < fin) {
+        int p = partitionner(tab, debut, fin);
+        triRapide(tab, debut, p - 1);
+        triRapide(tab, p + 1, fin);
+    }
+}
+
+5.2 Résolution de la complexité
+L'équation de récurrence est : T(n) = 2T(n/2) + cn.
+En utilisant le Théorème Master avec a=2, b=2 et f(n)=n, on déduit que la complexité moyenne est de O(n log n).
+
+--------------------------------------------------------------------------------
+
+6. Exercice 5 : Tri par Tas (Heap Sort)
+6.1 Démonstration sur liste (16, 10, 8, 11, 5, 6, 9, 1)
+1. Initialisation : L'arbre est construit.
+2. Entassement : On transforme l'arbre en Tas Max.
+   - Les parents sont comparés à leurs fils et permutés si nécessaire.
+   - Résultat Tas Max final : [16, 11, 9, 10, 5, 6, 8, 1]
+3. Tri : On extrait la racine et on reconstruit le tas.
+
+6.2 Implémentation
+void Tamiser(int *tab, int n, int i) {
+    int max = i, g = 2*i + 1, d = 2*i + 2;
+    if (g < n && tab[g] > tab[max]) max = g;
+    if (d < n && tab[d] > tab[max]) max = d;
+    if (max != i) {
+        int tmp = tab[i];
+        tab[i] = tab[max];
+        tab[max] = tmp;
+        Tamiser(tab, n, max);
+    }
+}
+
+void TriParTas(int *tab, int n) {
+    for (int i = n/2 - 1; i >= 0; i--) Tamiser(tab, n, i);
+    for (int i = n-1; i > 0; i--) {
+        int tmp = tab[0];
+        tab[0] = tab[i];
+        tab[i] = tmp;
+        Tamiser(tab, i, 0);
+    }
+}
+
+--------------------------------------------------------------------------------
+
+7. Synthèse et Comparaison Globale
+
+7.1 Comparaison Théorique
+Algorithme | Meilleur Cas | Cas Moyen   | Pire Cas
+-----------|--------------|-------------|----------
+Tri Bulle  | O(n)         | O(n^2)      | O(n^2)
+Tri Gnaque | O(n)         | O(n^2)      | O(n^2)
+QuickSort  | O(n log n)   | O(n log n)  | O(n^2)
+HeapSort   | O(n log n)   | O(n log n)  | O(n log n)
+
+7.2 Analyse des Graphes
+Les expérimentations montrent une différence flagrante :
+- Les courbes du QuickSort et du HeapSort restent proches de zéro même pour N=5000.
+- La courbe du Tri à Bulles s'élève de manière quadratique, confirmant l'inefficacité des tris par échanges simples sur de grands volumes.
+
+7.3 Conclusion
+Le TP valide les lois de complexité. Pour un Master en Informatique, il est crucial de privilégier les tris en O(n log n) pour la performance applicative.
